@@ -517,7 +517,7 @@ impl Swapchain {
 
 fn create_window(title: &str) -> Result<(Window, EventLoop), Box<dyn Error>> {
     log::debug!("Creating window and event loop");
-    let event_loop = EventLoop::new(90.0);
+    let event_loop = EventLoop::new();
 
     let window = Window::new(title);
 
@@ -780,10 +780,6 @@ fn create_vulkan_swapchain(
         if capabilities.current_extent.width != u32::MAX {
             capabilities.current_extent
         } else {
-            let min = capabilities.min_image_extent;
-            let max = capabilities.max_image_extent;
-            let width = width.min(max.width).max(min.width);
-            let height = height.min(max.height).max(min.height);
             vk::Extent2D { width, height }
         }
     };
@@ -817,7 +813,7 @@ fn create_vulkan_swapchain(
         };
 
         builder
-            .pre_transform(capabilities.current_transform)
+            .pre_transform(vk::SurfaceTransformFlagsKHR::IDENTITY)
             .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
             .present_mode(present_mode)
             .clipped(true)
@@ -944,7 +940,7 @@ fn record_command_buffers(
         })
         .clear_values(&[vk::ClearValue {
             color: vk::ClearColorValue {
-                float32: [1.0, 1.0, 1.0, 1.0],
+                float32: [0.0, 0.0, 0.0, 0.0],
             },
         }]);
 
