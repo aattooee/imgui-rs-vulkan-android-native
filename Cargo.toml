@@ -1,0 +1,24 @@
+[package]
+name = "imgui-rs-vulkan-android-native"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+thiserror = "1.0"
+log = "0.4"
+simple_logger = "5.0"
+ash = { version = "0.38", default-features = false, features = ["debug","linked"] }
+ultraviolet = "0.9"
+gpu-allocator = { version = "0.27", default-features = false, features = ["vulkan"] }
+
+
+imgui = { version = "^0.12", features = ["tables-api"] }
+
+ash-window = "0.13"
+image = "0.25"
+imgui-rs-vulkan-renderer = { version = "1.16.0", features = ["gpu-allocator"] }
+android_native_window= {path = "../android-native-window"}
+raw-window-handle = "0.6.2"
+
+
