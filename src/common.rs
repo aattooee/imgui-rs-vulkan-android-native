@@ -7,7 +7,11 @@ use imgui::*;
 use imgui_rs_vulkan_renderer::*;
 
 use std::{
-    error::Error, ffi::{CStr, CString}, io::Read, marker::PhantomData, os::raw::c_void
+    error::Error,
+    ffi::{CStr, CString},
+    io::Read,
+    marker::PhantomData,
+    os::raw::c_void,
 };
 
 use {
@@ -15,7 +19,7 @@ use {
     std::sync::{Arc, Mutex},
 };
 
-use android_native_window::{event::event_loop::EventLoop, Window,attach_window};
+use android_native_window::{attach_window, event::event_loop::EventLoop, Window};
 
 pub trait App {
     fn destroy(&mut self, context: &VulkanContext);
@@ -27,7 +31,6 @@ impl App for () {
 
 pub struct System<A: App + 'static> {
     phantom_data: PhantomData<A>,
-    window: Window,
     event_loop: EventLoop,
     pub vulkan_context: VulkanContext,
     command_buffer: vk::CommandBuffer,
@@ -132,9 +135,7 @@ impl<A: App> System<A> {
             },
         ]);
 
-
-        attach_window(imgui.io_mut(),&window);
-       
+        attach_window(imgui.io_mut(), &window);
 
         let renderer = {
             let allocator = Allocator::new(&AllocatorCreateDesc {
@@ -162,7 +163,6 @@ impl<A: App> System<A> {
 
         Ok(Self {
             phantom_data: PhantomData,
-            window,
             event_loop,
             vulkan_context,
             command_buffer,
