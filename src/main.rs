@@ -2,14 +2,14 @@ pub mod common;
 
 use common::*;
 use imgui::*;
-use simple_logger::SimpleLogger;
+
 use std::error::Error;
 
 const APP_NAME: &str = "hello world";
 
 fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(debug_assertions)]
-    SimpleLogger::new().init()?;
+    simple_logger::SimpleLogger::new().init()?;
     let mut value = 0;
     let choices = ["test test this is 1", "test test this is 2"];
     System::new(APP_NAME)?.run((), move |run, ui| {
@@ -22,6 +22,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 ui.text_wrapped("Hello world!");
                 ui.text_wrapped("你好世界！");
+                ui.text_wrapped("こんにちは世界！");
+                ui.text_wrapped("안녕하세요, 세계!");
+                ui.text_wrapped("我喜歡看書。");
                 if ui.button(choices[value]) {
                     value += 1;
                     value %= 2;

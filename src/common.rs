@@ -1,7 +1,8 @@
 use ash::{
     ext::debug_utils,
     khr::{surface, swapchain},
-    vk, Device, Entry, Instance,
+    vk::{self, SurfaceTransformFlagsKHR},
+    Device, Entry, Instance,
 };
 use imgui::*;
 use imgui_rs_vulkan_renderer::*;
@@ -91,6 +92,8 @@ impl<A: App> System<A> {
 
         let mut imgui = Context::create();
         imgui.set_ini_filename(None);
+
+
         //fonts
         use std::path::Path;
         let font_paths = ["/system/fonts", "/system/font", "/data/fonts"];
@@ -109,18 +112,22 @@ impl<A: App> System<A> {
 
         log::debug!("found font dir:{:?}", path);
 
-        let path = path.join("NotoSansCJK-Regular.ttc");
+        let path = path.join("NotoSerifCJK-Regular.ttc");
         if !path.exists() {
             panic!("Cannot find suitable font :{:?}", path);
         }
         let mut f = std::fs::File::open(path)?;
         let mut buf: Vec<u8> = Vec::new();
         let _ = f.read_to_end(&mut buf);
-        let font_size = (13.0 * 3.0) as f32;
+        let font_size = 30.0;
         imgui.fonts().add_font(&[
-            FontSource::DefaultFontData {
+            
+            FontSource::TtfData {
+                data: &buf,
+                size_pixels: font_size,
                 config: Some(FontConfig {
-                    size_pixels: font_size,
+                    rasterizer_multiply: 1.75,
+                    glyph_ranges: FontGlyphRanges::chinese_full(),
                     ..FontConfig::default()
                 }),
             },
@@ -129,7 +136,16 @@ impl<A: App> System<A> {
                 size_pixels: font_size,
                 config: Some(FontConfig {
                     rasterizer_multiply: 1.75,
-                    glyph_ranges: FontGlyphRanges::chinese_simplified_common(),
+                    glyph_ranges: FontGlyphRanges::japanese(),
+                    ..FontConfig::default()
+                }),
+            },
+            FontSource::TtfData {
+                data: &buf,
+                size_pixels: font_size,
+                config: Some(FontConfig {
+                    rasterizer_multiply: 1.75,
+                    glyph_ranges: FontGlyphRanges::korean(),
                     ..FontConfig::default()
                 }),
             },
@@ -214,7 +230,7 @@ impl<A: App> System<A> {
             //
             let renderer = &mut renderer;
             if dirty_swapchain {
-                let (width, height) = (-1, -1);
+                let (width, height) = (1080, 2400);
                 if width > 0 && height > 0 {
                     swapchain
                         .recreate(&vulkan_context)
@@ -260,7 +276,7 @@ impl<A: App> System<A> {
             let image_index = match next_image_result {
                 Ok((image_index, _)) => image_index,
                 Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    log::debug!("333");
+                    log::debug!("no free image");
                     dirty_swapchain = true;
                     return;
                 }
@@ -317,12 +333,8 @@ impl<A: App> System<A> {
                     .queue_present(vulkan_context.present_queue, &present_info)
             };
             match present_result {
-                Ok(is_suboptimal) if is_suboptimal => {
-                    // log::error!("111");
-                    // dirty_swapchain = true;
-                }
                 Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    log::error!("222");
+                    log::debug!("no free image");
                     dirty_swapchain = true;
                 }
                 Err(error) => panic!("Failed to present queue. Cause: {}", error),
@@ -355,7 +367,7 @@ impl VulkanContext {
         // Vulkan instance
         let entry = Entry::linked();
         let (instance, debug_utils, debug_utils_messenger) =
-            create_vulkan_instance(&entry, window, name)?;
+            create_vulkan_instance(&entry, window, name).expect("123");
 
         // Vulkan surface
         let surface = surface::Instance::new(&entry, &instance);
@@ -572,20 +584,11 @@ fn create_vulkan_instance(
 }
 
 unsafe extern "system" fn vulkan_debug_callback(
-    flag: vk::DebugUtilsMessageSeverityFlagsEXT,
-    typ: vk::DebugUtilsMessageTypeFlagsEXT,
-    p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
+    _flag: vk::DebugUtilsMessageSeverityFlagsEXT,
+    _typ: vk::DebugUtilsMessageTypeFlagsEXT,
+    _p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
     _: *mut c_void,
 ) -> vk::Bool32 {
-    use vk::DebugUtilsMessageSeverityFlagsEXT as Flag;
-
-    let message = CStr::from_ptr((*p_callback_data).p_message);
-    match flag {
-        Flag::VERBOSE => log::debug!("{typ:?} - {message:?}"),
-        Flag::INFO => log::info!("{typ:?} - {message:?}"),
-        Flag::WARNING => log::warn!("{typ:?} - {message:?}"),
-        _ => log::error!("{typ:?} - {message:?}"),
-    }
     vk::FALSE
 }
 
@@ -759,9 +762,9 @@ fn create_vulkan_swapchain(
                 )?
         };
         if present_modes.contains(&vk::PresentModeKHR::FIFO) {
-            vk::PresentModeKHR::IMMEDIATE
-        } else {
             vk::PresentModeKHR::FIFO
+        } else {
+            vk::PresentModeKHR::IMMEDIATE
         }
     };
     log::debug!("Swapchain present mode: {present_mode:?}");
@@ -776,13 +779,7 @@ fn create_vulkan_swapchain(
     };
 
     // Swapchain extent
-    let extent = {
-        if capabilities.current_extent.width != u32::MAX {
-            capabilities.current_extent
-        } else {
-            vk::Extent2D { width, height }
-        }
-    };
+    let extent = { vk::Extent2D { width, height } };
     log::debug!("Swapchain extent: {extent:?}");
 
     // Swapchain image count
@@ -811,9 +808,9 @@ fn create_vulkan_swapchain(
         } else {
             builder.image_sharing_mode(vk::SharingMode::EXCLUSIVE)
         };
-
+        log::debug!("transform:{:?}", capabilities.current_transform);
         builder
-            .pre_transform(vk::SurfaceTransformFlagsKHR::IDENTITY)
+            .pre_transform(SurfaceTransformFlagsKHR::IDENTITY)
             .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
             .present_mode(present_mode)
             .clipped(true)
