@@ -18,7 +18,7 @@ imgui = { version = "^0.12", features = ["tables-api"] }
 ash-window = "0.13"
 image = "0.25"
 imgui-rs-vulkan-renderer = { version = "1.16.0" ,features = ["gpu-allocator"]}
-android_native_window = {path = "../android-native-window"}
+android_native_window = "0.2.0"
 raw-window-handle = "0.6.2"
 
 

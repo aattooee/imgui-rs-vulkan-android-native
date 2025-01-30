@@ -93,7 +93,6 @@ impl<A: App> System<A> {
         let mut imgui = Context::create();
         imgui.set_ini_filename(None);
 
-
         //fonts
         use std::path::Path;
         let font_paths = ["/system/fonts", "/system/font", "/data/fonts"];
@@ -121,7 +120,6 @@ impl<A: App> System<A> {
         let _ = f.read_to_end(&mut buf);
         let font_size = 30.0;
         imgui.fonts().add_font(&[
-            
             FontSource::TtfData {
                 data: &buf,
                 size_pixels: font_size,
