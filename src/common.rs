@@ -118,7 +118,8 @@ impl<A: App> System<A> {
         let mut f = std::fs::File::open(path)?;
         let mut buf: Vec<u8> = Vec::new();
         let _ = f.read_to_end(&mut buf);
-        let font_size = 30.0;
+
+        let font_size = 39.0;
         imgui.fonts().add_font(&[
             FontSource::TtfData {
                 data: &buf,
@@ -138,16 +139,8 @@ impl<A: App> System<A> {
                     ..FontConfig::default()
                 }),
             },
-            FontSource::TtfData {
-                data: &buf,
-                size_pixels: font_size,
-                config: Some(FontConfig {
-                    rasterizer_multiply: 1.75,
-                    glyph_ranges: FontGlyphRanges::korean(),
-                    ..FontConfig::default()
-                }),
-            },
         ]);
+        
 
         attach_window(imgui.io_mut(), &window);
 
@@ -258,7 +251,7 @@ impl<A: App> System<A> {
             unsafe {
                 vulkan_context
                     .device
-                    .wait_for_fences(&[fence], true, std::u64::MAX)
+                    .wait_for_fences(&[fence], true, u64::MAX)
                     .expect("Failed to wait ")
             };
 
@@ -266,7 +259,7 @@ impl<A: App> System<A> {
             let next_image_result = unsafe {
                 swapchain.loader.acquire_next_image(
                     swapchain.khr,
-                    std::u64::MAX,
+                    u64::MAX,
                     image_available_semaphore,
                     vk::Fence::null(),
                 )
@@ -527,9 +520,9 @@ impl Swapchain {
 
 fn create_window(title: &str) -> Result<(Window, EventLoop), Box<dyn Error>> {
     log::debug!("Creating window and event loop");
-    let event_loop = EventLoop::new();
+    let mut event_loop = EventLoop::default();
 
-    let window = Window::new(title);
+    let window = Window::new(title,&mut event_loop);
 
     Ok((window, event_loop))
 }
